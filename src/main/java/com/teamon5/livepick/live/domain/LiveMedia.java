@@ -1,10 +1,10 @@
 package com.teamon5.livepick.live.domain;
 
 import com.msa.common.core.error.BusinessException;
-import com.msa.common.core.error.CommonErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 @Getter
@@ -17,34 +17,41 @@ public class LiveMedia {
   private final LiveMediaType mediaType;
   private final String fullPath;
   private final String name;
-  private final String fileName;
-  private final String fileType;
-  private final Long fileSize;
+  @Getter(AccessLevel.NONE)
+  private final MediaFile file;
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
-  private LiveMedia(LiveMediaType mediaType, String fullPath, String name, String fileName,
-      String fileType, Long fileSize, LocalDateTime now) {
+  private LiveMedia(LiveMediaType mediaType, String fullPath, String name, MediaFile file,
+      LocalDateTime now) {
     this.mediaUuid = UUID.randomUUID();
     this.mediaType = Objects.requireNonNull(mediaType);
     this.fullPath = fullPath;
     this.name = Objects.requireNonNull(name);
-    this.fileName = fileName;
-    this.fileType = fileType;
-    this.fileSize = fileSize;
+    this.file = file;
     this.createdAt = Objects.requireNonNull(now);
     this.updatedAt = now;
   }
 
   public static LiveMedia create(LiveMediaType mediaType, String fullPath, String name,
       String fileName, String fileType, Long fileSize, LocalDateTime now) {
-    if (fileSize != null && fileSize < 0) {
-      throw new BusinessException(CommonErrorCode.INVALID_INPUT);
-    }
+    MediaFile file = new MediaFile(fileName, fileType, fileSize);
     if (mediaType == LiveMediaType.IMAGE && fileSize != null
         && fileSize > MAX_IMAGE_SIZE_BYTES) {
       throw new BusinessException(LiveErrorCode.INVALID_MEDIA_FILE_SIZE);
     }
-    return new LiveMedia(mediaType, fullPath, name, fileName, fileType, fileSize, now);
+    return new LiveMedia(mediaType, fullPath, name, file, now);
+  }
+
+  public String getFileName() {
+    return file.fileName();
+  }
+
+  public String getFileType() {
+    return file.fileType();
+  }
+
+  public Long getFileSize() {
+    return file.fileSize();
   }
 }
