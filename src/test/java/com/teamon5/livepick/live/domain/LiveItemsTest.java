@@ -108,6 +108,21 @@ class LiveItemsTest {
         .isInstanceOf(UnsupportedOperationException.class);
   }
 
+  @Test
+  void 노출_순서나_공개_기준이_음수이면_예외가_발생한다() {
+    Live live = createLive();
+
+    assertThatThrownBy(() -> live.addCoupon(UUID.randomUUID(), -1, 0, NOW))
+        .isInstanceOf(BusinessException.class);
+    assertThatThrownBy(() -> live.addCoupon(UUID.randomUUID(), 0, -1, NOW))
+        .isInstanceOf(BusinessException.class);
+    assertThatThrownBy(() ->
+        live.addProduct(UUID.randomUUID(), UUID.randomUUID(), "옵션", -1, NOW))
+        .isInstanceOf(BusinessException.class);
+    assertThatThrownBy(() -> live.addHost("호스트", null, -1))
+        .isInstanceOf(BusinessException.class);
+  }
+
   private static void assertError(ThrowingCallable call, LiveErrorCode expected) {
     assertThatThrownBy(call)
         .isInstanceOf(BusinessException.class)

@@ -1,5 +1,7 @@
 package com.teamon5.livepick.live.domain;
 
+import com.msa.common.core.error.BusinessException;
+import com.msa.common.core.error.CommonErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -16,6 +18,9 @@ public class LiveCoupon {
   private final LocalDateTime createdAt;
 
   LiveCoupon(UUID couponId, int unlockViewerCount, int displayOrder, LocalDateTime createdAt) {
+    if (unlockViewerCount < 0 || displayOrder < 0) {
+      throw new BusinessException(CommonErrorCode.INVALID_INPUT);
+    }
     this.couponId = Objects.requireNonNull(couponId);
     this.unlockViewerCount = unlockViewerCount;
     this.displayOrder = displayOrder;

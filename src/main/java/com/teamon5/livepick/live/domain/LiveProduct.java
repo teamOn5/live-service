@@ -1,5 +1,7 @@
 package com.teamon5.livepick.live.domain;
 
+import com.msa.common.core.error.BusinessException;
+import com.msa.common.core.error.CommonErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -19,6 +21,9 @@ public class LiveProduct {
 
   LiveProduct(UUID productId, UUID productOptionId, OptionName optionName, int displayOrder,
       LocalDateTime createdAt) {
+    if (displayOrder < 0) {
+      throw new BusinessException(CommonErrorCode.INVALID_INPUT);
+    }
     this.productId = Objects.requireNonNull(productId);
     this.productOptionId = Objects.requireNonNull(productOptionId);
     this.optionName = optionName;
