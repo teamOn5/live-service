@@ -30,6 +30,13 @@ class LiveMediaTest {
   }
 
   @Test
+  void 이미지는_파일_크기가_없으면_생성할_수_없다() {
+    assertThatThrownBy(() -> LiveMedia.create(LiveMediaType.IMAGE, "/img", "a.png", "a.png",
+        "image/png", null, NOW))
+        .isInstanceOf(BusinessException.class);
+  }
+
+  @Test
   void 동영상은_크기_제한을_적용하지_않는다() {
     LiveMedia media = LiveMedia.create(LiveMediaType.VIDEO, "/vid", "v.mp4", "v.mp4",
         "video/mp4", 500 * MB, NOW);
