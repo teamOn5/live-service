@@ -107,6 +107,27 @@ class LiveTest {
     assertThat(live.getStatus()).isEqualTo(LiveStatus.RUNNING);
   }
 
+  @Test
+  void 일시정지_상태에서도_방송을_종료할_수_있다() {
+    Live live = createLive();
+    live.start(NOW);
+    live.pause(NOW.plusMinutes(1));
+
+    live.end(NOW.plusMinutes(30), LiveEndReason.SELLER_ENDED, SELLER);
+
+    assertThat(live.getStatus()).isEqualTo(LiveStatus.TERMINATED);
+  }
+
+  @Test
+  void 상태_변경_시각이_null이면_예외가_발생하고_상태가_바뀌지_않는다() {
+    Live live = createLive();
+
+    assertThatThrownBy(() -> live.start(null))
+        .isInstanceOf(NullPointerException.class);
+    assertThat(live.getStatus()).isEqualTo(LiveStatus.CREATED);
+    assertThat(live.getStartedAt()).isNull();
+  }
+
   private Live createLive() {
     return Live.create(UUID.randomUUID(), SELLER, 1L, null,
         "첫 방송", "설명", NOW.plusHours(1), NOW.plusHours(2), NOW);

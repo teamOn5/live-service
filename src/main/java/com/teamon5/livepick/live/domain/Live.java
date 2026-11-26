@@ -2,6 +2,7 @@ package com.teamon5.livepick.live.domain;
 
 import com.msa.common.core.error.BusinessException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -80,34 +81,35 @@ public class Live {
   }
 
   public void start(LocalDateTime now) {
-    changeStatus(LiveStatus.CREATED, LiveStatus.RUNNING, now);
+    changeStatus(LiveStatus.RUNNING, now, LiveStatus.CREATED);
     this.startedAt = now;
   }
 
   public void pause(LocalDateTime now) {
-    changeStatus(LiveStatus.RUNNING, LiveStatus.PAUSED, now);
+    changeStatus(LiveStatus.PAUSED, now, LiveStatus.RUNNING);
   }
 
   public void resume(LocalDateTime now) {
-    changeStatus(LiveStatus.PAUSED, LiveStatus.RUNNING, now);
+    changeStatus(LiveStatus.RUNNING, now, LiveStatus.PAUSED);
   }
 
   public void end(LocalDateTime now, LiveEndReason reason, UUID endedBy) {
-    changeStatus(LiveStatus.RUNNING, LiveStatus.TERMINATED, now);
+    changeStatus(LiveStatus.TERMINATED, now, LiveStatus.RUNNING, LiveStatus.PAUSED);
     this.endedAt = now;
     this.endReason = reason;
     this.endedBy = endedBy;
   }
 
   public void cancel(LocalDateTime now, LiveCancelReason reason, UUID canceledBy) {
-    changeStatus(LiveStatus.CREATED, LiveStatus.CANCELED, now);
+    changeStatus(LiveStatus.CANCELED, now, LiveStatus.CREATED);
     this.canceledAt = now;
     this.cancelReason = reason;
     this.canceledBy = canceledBy;
   }
 
-  private void changeStatus(LiveStatus from, LiveStatus to, LocalDateTime now) {
-    if (this.status != from) {
+  private void changeStatus(LiveStatus to, LocalDateTime now, LiveStatus... allowedFrom) {
+    Objects.requireNonNull(now);
+    if (!Arrays.asList(allowedFrom).contains(this.status)) {
       throw new BusinessException(LiveErrorCode.INVALID_LIVE_STATUS_TRANSITION);
     }
     this.status = to;
