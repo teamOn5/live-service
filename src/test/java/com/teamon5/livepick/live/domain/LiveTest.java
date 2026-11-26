@@ -26,16 +26,16 @@ class LiveTest {
 
   @Test
   void 필수_값이_null이면_생성할_수_없다() {
-    LiveSchedule schedule = new LiveSchedule(NOW.plusHours(1), NOW.plusHours(2));
+    LocalDateTime start = NOW.plusHours(1);
+    LocalDateTime end = NOW.plusHours(2);
 
-    assertThatThrownBy(() -> Live.create(null, SELLER, 1L, null,
-        new LiveTitle("첫 방송"), null, schedule, NOW))
+    assertThatThrownBy(() -> Live.create(null, SELLER, 1L, null, "첫 방송", null, start, end, NOW))
         .isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> Live.create(UUID.randomUUID(), null, 1L, null,
-        new LiveTitle("첫 방송"), null, schedule, NOW))
+    assertThatThrownBy(() -> Live.create(UUID.randomUUID(), null, 1L, null, "첫 방송", null,
+        start, end, NOW))
         .isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> Live.create(UUID.randomUUID(), SELLER, null, null,
-        new LiveTitle("첫 방송"), null, schedule, NOW))
+    assertThatThrownBy(() -> Live.create(UUID.randomUUID(), SELLER, null, null, "첫 방송", null,
+        start, end, NOW))
         .isInstanceOf(NullPointerException.class);
   }
 
@@ -108,8 +108,7 @@ class LiveTest {
   }
 
   private Live createLive() {
-    LiveSchedule schedule = new LiveSchedule(NOW.plusHours(1), NOW.plusHours(2));
     return Live.create(UUID.randomUUID(), SELLER, 1L, null,
-        new LiveTitle("첫 방송"), new LiveDescription("설명"), schedule, NOW);
+        "첫 방송", "설명", NOW.plusHours(1), NOW.plusHours(2), NOW);
   }
 }

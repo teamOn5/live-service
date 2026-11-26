@@ -4,6 +4,7 @@ import com.msa.common.core.error.BusinessException;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 @Getter
@@ -13,11 +14,14 @@ public class Live {
   private final UUID liveUuid;
   private final UUID shopId;
   private final UUID createdBy;
-  private LiveTitle title;
-  private LiveDescription description;
+  @Getter(AccessLevel.NONE)
+  private final Title title;
+  @Getter(AccessLevel.NONE)
+  private final Description description;
   private Long thumbnailMediaId;
   private Long categoryId;
-  private LiveSchedule schedule;
+  @Getter(AccessLevel.NONE)
+  private final Schedule schedule;
   private LiveStatus status;
   private LiveEndReason endReason;
   private LiveCancelReason cancelReason;
@@ -36,15 +40,15 @@ public class Live {
   private LocalDateTime deletedAt;
 
   private Live(UUID liveUuid, UUID shopId, UUID createdBy, Long categoryId, Long thumbnailMediaId,
-      LiveTitle title, LiveDescription description, LiveSchedule schedule, LocalDateTime now) {
+      Title title, Description description, Schedule schedule, LocalDateTime now) {
     this.liveUuid = liveUuid;
     this.shopId = Objects.requireNonNull(shopId);
     this.createdBy = Objects.requireNonNull(createdBy);
     this.categoryId = Objects.requireNonNull(categoryId);
     this.thumbnailMediaId = thumbnailMediaId;
-    this.title = Objects.requireNonNull(title);
+    this.title = title;
     this.description = description;
-    this.schedule = Objects.requireNonNull(schedule);
+    this.schedule = schedule;
     this.status = LiveStatus.CREATED;
     this.chatEnabled = true;
     this.createdAt = Objects.requireNonNull(now);
@@ -52,9 +56,27 @@ public class Live {
   }
 
   public static Live create(UUID shopId, UUID createdBy, Long categoryId, Long thumbnailMediaId,
-      LiveTitle title, LiveDescription description, LiveSchedule schedule, LocalDateTime now) {
+      String title, String description, LocalDateTime scheduledStartAt,
+      LocalDateTime scheduledEndAt, LocalDateTime now) {
     return new Live(UUID.randomUUID(), shopId, createdBy, categoryId, thumbnailMediaId,
-        title, description, schedule, now);
+        new Title(title), description == null ? null : new Description(description),
+        new Schedule(scheduledStartAt, scheduledEndAt), now);
+  }
+
+  public String getTitle() {
+    return title.value();
+  }
+
+  public String getDescription() {
+    return description == null ? null : description.value();
+  }
+
+  public LocalDateTime getScheduledStartAt() {
+    return schedule.scheduledStartAt();
+  }
+
+  public LocalDateTime getScheduledEndAt() {
+    return schedule.scheduledEndAt();
   }
 
   public void start(LocalDateTime now) {
@@ -90,5 +112,39 @@ public class Live {
     }
     this.status = to;
     this.updatedAt = now;
+  }
+
+  private record Title(String value) {
+
+    private static final int MAX_LENGTH = 20;
+
+    Title {
+      if (value == null || value.isBlank() || value.length() > MAX_LENGTH) {
+        throw new BusinessException(LiveErrorCode.INVALID_LIVE_TITLE);
+      }
+    }
+  }
+
+  private record Description(String value) {
+
+    private static final int MAX_LENGTH = 100;
+
+    Description {
+      if (value == null || value.length() > MAX_LENGTH) {
+        throw new BusinessException(LiveErrorCode.INVALID_LIVE_DESCRIPTION);
+      }
+    }
+  }
+
+  private record Schedule(LocalDateTime scheduledStartAt, LocalDateTime scheduledEndAt) {
+
+    private static final int MIN_DURATION_MINUTES = 10;
+
+    Schedule {
+      if (scheduledStartAt == null || scheduledEndAt == null
+          || scheduledEndAt.isBefore(scheduledStartAt.plusMinutes(MIN_DURATION_MINUTES))) {
+        throw new BusinessException(LiveErrorCode.INVALID_LIVE_SCHEDULE);
+      }
+    }
   }
 }
