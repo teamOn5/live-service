@@ -1,5 +1,7 @@
 package com.teamon5.livepick.live.domain;
 
+import com.msa.common.core.error.BusinessException;
+import com.msa.common.core.error.CommonErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
@@ -13,19 +15,20 @@ public class LiveStats {
   private final int chatCount;
   private final LocalDateTime finalizedAt;
 
-  public LiveStats(Long liveId, int peakViewerCount, int uniqueViewerCount, int chatCount,
+  private LiveStats(Long liveId, int peakViewerCount, int uniqueViewerCount, int chatCount,
       LocalDateTime finalizedAt) {
     this.liveId = Objects.requireNonNull(liveId);
-    this.peakViewerCount = nonNegative(peakViewerCount);
-    this.uniqueViewerCount = nonNegative(uniqueViewerCount);
-    this.chatCount = nonNegative(chatCount);
+    this.peakViewerCount = peakViewerCount;
+    this.uniqueViewerCount = uniqueViewerCount;
+    this.chatCount = chatCount;
     this.finalizedAt = Objects.requireNonNull(finalizedAt);
   }
 
-  private static int nonNegative(int count) {
-    if (count < 0) {
-      throw new IllegalArgumentException("집계 값은 0 이상이어야 합니다.");
+  public static LiveStats create(Long liveId, int peakViewerCount, int uniqueViewerCount,
+      int chatCount, LocalDateTime finalizedAt) {
+    if (peakViewerCount < 0 || uniqueViewerCount < 0 || chatCount < 0) {
+      throw new BusinessException(CommonErrorCode.INVALID_INPUT);
     }
-    return count;
+    return new LiveStats(liveId, peakViewerCount, uniqueViewerCount, chatCount, finalizedAt);
   }
 }

@@ -1,6 +1,7 @@
 package com.teamon5.livepick.live.domain;
 
 import com.msa.common.core.error.BusinessException;
+import com.msa.common.core.error.CommonErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -37,6 +38,9 @@ public class LiveMedia {
 
   public static LiveMedia create(LiveMediaType mediaType, String fullPath, String name,
       String fileName, String fileType, Long fileSize, LocalDateTime now) {
+    if (fileSize != null && fileSize < 0) {
+      throw new BusinessException(CommonErrorCode.INVALID_INPUT);
+    }
     if (mediaType == LiveMediaType.IMAGE && fileSize != null
         && fileSize > MAX_IMAGE_SIZE_BYTES) {
       throw new BusinessException(LiveErrorCode.INVALID_MEDIA_FILE_SIZE);

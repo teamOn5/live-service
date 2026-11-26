@@ -38,6 +38,13 @@ class LiveMediaTest {
   }
 
   @Test
+  void 파일_크기가_음수이면_예외가_발생한다() {
+    assertThatThrownBy(() -> LiveMedia.create(LiveMediaType.VIDEO, "/vid", "v.mp4", "v.mp4",
+        "video/mp4", -1L, NOW))
+        .isInstanceOf(BusinessException.class);
+  }
+
+  @Test
   void 저장_이름이_null이면_생성할_수_없다() {
     assertThatThrownBy(() -> LiveMedia.create(LiveMediaType.IMAGE, "/img", null, "a.png",
         "image/png", 1L, NOW))
