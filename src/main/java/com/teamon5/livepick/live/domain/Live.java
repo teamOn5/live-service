@@ -15,13 +15,13 @@ public class Live {
   private final UUID shopId;
   private final UUID createdBy;
   @Getter(AccessLevel.NONE)
-  private final Title title;
+  private final LiveTitle title;
   @Getter(AccessLevel.NONE)
-  private final Description description;
+  private final LiveDescription description;
   private Long thumbnailMediaId;
   private Long categoryId;
   @Getter(AccessLevel.NONE)
-  private final Schedule schedule;
+  private final LiveSchedule schedule;
   private LiveStatus status;
   private LiveEndReason endReason;
   private LiveCancelReason cancelReason;
@@ -40,7 +40,7 @@ public class Live {
   private LocalDateTime deletedAt;
 
   private Live(UUID liveUuid, UUID shopId, UUID createdBy, Long categoryId, Long thumbnailMediaId,
-      Title title, Description description, Schedule schedule, LocalDateTime now) {
+      LiveTitle title, LiveDescription description, LiveSchedule schedule, LocalDateTime now) {
     this.liveUuid = liveUuid;
     this.shopId = Objects.requireNonNull(shopId);
     this.createdBy = Objects.requireNonNull(createdBy);
@@ -59,8 +59,8 @@ public class Live {
       String title, String description, LocalDateTime scheduledStartAt,
       LocalDateTime scheduledEndAt, LocalDateTime now) {
     return new Live(UUID.randomUUID(), shopId, createdBy, categoryId, thumbnailMediaId,
-        new Title(title), description == null ? null : new Description(description),
-        new Schedule(scheduledStartAt, scheduledEndAt), now);
+        new LiveTitle(title), description == null ? null : new LiveDescription(description),
+        new LiveSchedule(scheduledStartAt, scheduledEndAt), now);
   }
 
   public String getTitle() {
@@ -112,39 +112,5 @@ public class Live {
     }
     this.status = to;
     this.updatedAt = now;
-  }
-
-  private record Title(String value) {
-
-    private static final int MAX_LENGTH = 20;
-
-    Title {
-      if (value == null || value.isBlank() || value.length() > MAX_LENGTH) {
-        throw new BusinessException(LiveErrorCode.INVALID_LIVE_TITLE);
-      }
-    }
-  }
-
-  private record Description(String value) {
-
-    private static final int MAX_LENGTH = 100;
-
-    Description {
-      if (value == null || value.length() > MAX_LENGTH) {
-        throw new BusinessException(LiveErrorCode.INVALID_LIVE_DESCRIPTION);
-      }
-    }
-  }
-
-  private record Schedule(LocalDateTime scheduledStartAt, LocalDateTime scheduledEndAt) {
-
-    private static final int MIN_DURATION_MINUTES = 10;
-
-    Schedule {
-      if (scheduledStartAt == null || scheduledEndAt == null
-          || scheduledEndAt.isBefore(scheduledStartAt.plusMinutes(MIN_DURATION_MINUTES))) {
-        throw new BusinessException(LiveErrorCode.INVALID_LIVE_SCHEDULE);
-      }
-    }
   }
 }
