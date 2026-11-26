@@ -28,6 +28,9 @@ public class LiveViewHistory {
   }
 
   public void visit(LocalDateTime now) {
-    this.lastViewedAt = Objects.requireNonNull(now);
+    Objects.requireNonNull(now);
+    if (now.isAfter(this.lastViewedAt)) {
+      this.lastViewedAt = now;
+    }
   }
 }

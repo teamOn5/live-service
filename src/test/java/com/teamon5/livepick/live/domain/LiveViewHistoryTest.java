@@ -30,6 +30,16 @@ class LiveViewHistoryTest {
   }
 
   @Test
+  void 과거_시각으로_방문하면_마지막_입장_시각은_바뀌지_않는다() {
+    LiveViewHistory history = LiveViewHistory.create(UUID.randomUUID(), 1L, UUID.randomUUID(), NOW);
+    history.visit(NOW.plusMinutes(30));
+
+    history.visit(NOW.plusMinutes(10));
+
+    assertThat(history.getLastViewedAt()).isEqualTo(NOW.plusMinutes(30));
+  }
+
+  @Test
   void 회원_방송_쇼핑몰_중_null이_있으면_생성할_수_없다() {
     assertThatThrownBy(() -> LiveViewHistory.create(null, 1L, UUID.randomUUID(), NOW))
         .isInstanceOf(NullPointerException.class);
