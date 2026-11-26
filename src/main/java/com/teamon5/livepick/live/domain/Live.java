@@ -2,7 +2,10 @@ package com.teamon5.livepick.live.domain;
 
 import com.msa.common.core.error.BusinessException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -10,6 +13,11 @@ import lombok.Getter;
 
 @Getter
 public class Live {
+
+  private static final int MAX_PRODUCTS = 5;
+  private static final int MAX_COUPONS = 5;
+  private static final int MAX_HASHTAGS = 5;
+  private static final int MAX_HOSTS = 5;
 
   private Long id;
   private final UUID liveUuid;
@@ -39,6 +47,11 @@ public class Live {
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
   private LocalDateTime deletedAt;
+  private final List<LiveProduct> products = new ArrayList<>();
+  private final List<LiveCoupon> coupons = new ArrayList<>();
+  private final List<LiveHashtag> hashtags = new ArrayList<>();
+  private final List<LiveHost> hosts = new ArrayList<>();
+  private final List<LiveNotice> notices = new ArrayList<>();
 
   private Live(UUID liveUuid, UUID shopId, UUID createdBy, Long categoryId, Long thumbnailMediaId,
       LiveTitle title, LiveDescription description, LiveSchedule schedule, LocalDateTime now) {
@@ -105,6 +118,72 @@ public class Live {
     this.canceledAt = now;
     this.cancelReason = reason;
     this.canceledBy = canceledBy;
+  }
+
+  public void addProduct(UUID productId, UUID productOptionId, String optionName,
+      int displayOrder, LocalDateTime now) {
+    if (products.size() >= MAX_PRODUCTS) {
+      throw new BusinessException(LiveErrorCode.ITEM_LIMIT_EXCEEDED);
+    }
+    if (products.stream().anyMatch(p -> p.getProductOptionId().equals(productOptionId))) {
+      throw new BusinessException(LiveErrorCode.DUPLICATE_LIVE_ITEM);
+    }
+    products.add(new LiveProduct(productId, productOptionId, new OptionName(optionName),
+        displayOrder, now));
+  }
+
+  public void addCoupon(UUID couponId, int unlockViewerCount, int displayOrder,
+      LocalDateTime now) {
+    if (coupons.size() >= MAX_COUPONS) {
+      throw new BusinessException(LiveErrorCode.ITEM_LIMIT_EXCEEDED);
+    }
+    if (coupons.stream().anyMatch(c -> c.getCouponId().equals(couponId))) {
+      throw new BusinessException(LiveErrorCode.DUPLICATE_LIVE_ITEM);
+    }
+    coupons.add(new LiveCoupon(couponId, unlockViewerCount, displayOrder, now));
+  }
+
+  public void addHashtag(String tag) {
+    Hashtag hashtag = new Hashtag(tag);
+    if (hashtags.size() >= MAX_HASHTAGS) {
+      throw new BusinessException(LiveErrorCode.ITEM_LIMIT_EXCEEDED);
+    }
+    if (hashtags.stream().anyMatch(h -> h.getTag().equals(hashtag.value()))) {
+      throw new BusinessException(LiveErrorCode.DUPLICATE_LIVE_ITEM);
+    }
+    hashtags.add(new LiveHashtag(hashtag));
+  }
+
+  public void addHost(String name, Long imageMediaId, int displayOrder) {
+    HostName hostName = new HostName(name);
+    if (hosts.size() >= MAX_HOSTS) {
+      throw new BusinessException(LiveErrorCode.ITEM_LIMIT_EXCEEDED);
+    }
+    hosts.add(new LiveHost(hostName, imageMediaId, displayOrder));
+  }
+
+  public void addNotice(String content, UUID author, LocalDateTime now) {
+    notices.add(new LiveNotice(new NoticeContent(content), author, now));
+  }
+
+  public List<LiveProduct> getProducts() {
+    return Collections.unmodifiableList(products);
+  }
+
+  public List<LiveCoupon> getCoupons() {
+    return Collections.unmodifiableList(coupons);
+  }
+
+  public List<LiveHashtag> getHashtags() {
+    return Collections.unmodifiableList(hashtags);
+  }
+
+  public List<LiveHost> getHosts() {
+    return Collections.unmodifiableList(hosts);
+  }
+
+  public List<LiveNotice> getNotices() {
+    return Collections.unmodifiableList(notices);
   }
 
   private void changeStatus(LiveStatus to, LocalDateTime now, LiveStatus... allowedFrom) {
