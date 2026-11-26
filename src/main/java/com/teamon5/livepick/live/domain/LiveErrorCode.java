@@ -9,6 +9,7 @@ public enum LiveErrorCode implements ErrorCode {
   INVALID_LIVE_DESCRIPTION("LIVE4002", HttpStatus.BAD_REQUEST, "방송 설명은 100자 이하여야 합니다."),
   INVALID_LIVE_SCHEDULE("LIVE4003", HttpStatus.BAD_REQUEST,
       "예정 종료 시각은 예정 시작 시각보다 10분 이상 뒤여야 합니다."),
+  INVALID_MEDIA_FILE_SIZE("LIVE4004", HttpStatus.BAD_REQUEST, "이미지는 10MB 이하여야 합니다."),
   INVALID_LIVE_STATUS_TRANSITION("LIVE4091", HttpStatus.CONFLICT,
       "현재 방송 상태에서는 요청한 작업을 할 수 없습니다.");
 
