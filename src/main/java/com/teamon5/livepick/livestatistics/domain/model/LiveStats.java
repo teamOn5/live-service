@@ -1,27 +1,28 @@
-package com.teamon5.livepick.live.domain;
+package com.teamon5.livepick.livestatistics.domain.model;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 
 @Getter
 public class LiveStats {
 
-  private final Long liveId;
+  private final UUID liveUuid;
   @Getter(AccessLevel.NONE)
   private final LiveStatistics statistics;
   private final LocalDateTime finalizedAt;
 
-  private LiveStats(Long liveId, LiveStatistics statistics, LocalDateTime finalizedAt) {
-    this.liveId = Objects.requireNonNull(liveId);
+  private LiveStats(UUID liveUuid, LiveStatistics statistics, LocalDateTime finalizedAt) {
+    this.liveUuid = Objects.requireNonNull(liveUuid);
     this.statistics = statistics;
     this.finalizedAt = Objects.requireNonNull(finalizedAt);
   }
 
-  public static LiveStats create(Long liveId, int peakViewerCount, int uniqueViewerCount,
+  public static LiveStats create(UUID liveUuid, int peakViewerCount, int uniqueViewerCount,
       int chatCount, LocalDateTime finalizedAt) {
-    return new LiveStats(liveId,
+    return new LiveStats(liveUuid,
         new LiveStatistics(peakViewerCount, uniqueViewerCount, chatCount), finalizedAt);
   }
 
