@@ -1,19 +1,21 @@
-package com.teamon5.livepick.live.domain;
+package com.teamon5.livepick.livestatistics.domain.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.msa.common.core.error.BusinessException;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class LiveStatsTest {
 
   private static final LocalDateTime NOW = LocalDateTime.of(2026, 12, 1, 12, 0);
+  private static final UUID LIVE_UUID = UUID.randomUUID();
 
   @Test
   void 집계_값을_그대로_보관한다() {
-    LiveStats stats = LiveStats.create(1L, 120, 300, 45, NOW);
+    LiveStats stats = LiveStats.create(LIVE_UUID, 120, 300, 45, NOW);
 
     assertThat(stats.getPeakViewerCount()).isEqualTo(120);
     assertThat(stats.getUniqueViewerCount()).isEqualTo(300);
@@ -23,7 +25,7 @@ class LiveStatsTest {
 
   @Test
   void 집계_값이_음수이면_예외가_발생한다() {
-    assertThatThrownBy(() -> LiveStats.create(1L, -1, 0, 0, NOW))
+    assertThatThrownBy(() -> LiveStats.create(LIVE_UUID, -1, 0, 0, NOW))
         .isInstanceOf(BusinessException.class);
   }
 }

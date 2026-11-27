@@ -1,4 +1,4 @@
-package com.teamon5.livepick.live.domain;
+package com.teamon5.livepick.livestatistics.domain.model;
 
 import com.msa.common.core.error.BusinessException;
 import com.msa.common.core.error.CommonErrorCode;
