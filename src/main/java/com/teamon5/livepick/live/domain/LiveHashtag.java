@@ -1,20 +1,20 @@
 package com.teamon5.livepick.live.domain;
 
-import lombok.AccessLevel;
+import com.msa.common.core.error.BusinessException;
 import lombok.Getter;
 
 @Getter
 public class LiveHashtag {
 
+  private static final int MAX_LENGTH = 10;
+
   private Long id;
-  @Getter(AccessLevel.NONE)
-  private final Hashtag tag;
+  private final String tag;
 
-  LiveHashtag(Hashtag tag) {
+  LiveHashtag(String tag) {
+    if (tag == null || tag.isBlank() || tag.length() > MAX_LENGTH) {
+      throw new BusinessException(LiveErrorCode.INVALID_HASHTAG);
+    }
     this.tag = tag;
-  }
-
-  public String getTag() {
-    return tag.value();
   }
 }

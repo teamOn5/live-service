@@ -1,27 +1,27 @@
 package com.teamon5.livepick.live.domain;
 
+import com.msa.common.core.error.BusinessException;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
-import lombok.AccessLevel;
 import lombok.Getter;
 
 @Getter
 public class LiveNotice {
 
+  private static final int MAX_CONTENT_LENGTH = 50;
+
   private Long id;
-  @Getter(AccessLevel.NONE)
-  private final NoticeContent content;
+  private final String content;
   private final UUID createdBy;
   private final LocalDateTime createdAt;
 
-  LiveNotice(NoticeContent content, UUID createdBy, LocalDateTime createdAt) {
+  LiveNotice(String content, UUID createdBy, LocalDateTime createdAt) {
+    if (content == null || content.isBlank() || content.length() > MAX_CONTENT_LENGTH) {
+      throw new BusinessException(LiveErrorCode.INVALID_NOTICE_CONTENT);
+    }
     this.content = content;
     this.createdBy = Objects.requireNonNull(createdBy);
     this.createdAt = Objects.requireNonNull(createdAt);
-  }
-
-  public String getContent() {
-    return content.value();
   }
 }
