@@ -1,6 +1,8 @@
 package com.teamon5.livepick.live.domain;
 
 import com.msa.common.core.error.ErrorCodeValidator;
+import com.teamon5.livepick.live.domain.exception.LiveErrorCode;
+import com.teamon5.livepick.live.domain.model.Live;
 import org.junit.jupiter.api.Test;
 
 class LiveErrorCodeTest {

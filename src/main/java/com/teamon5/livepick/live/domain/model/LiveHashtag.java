@@ -1,6 +1,7 @@
-package com.teamon5.livepick.live.domain;
+package com.teamon5.livepick.live.domain.model;
 
 import com.msa.common.core.error.BusinessException;
+import com.teamon5.livepick.live.domain.exception.LiveErrorCode;
 import lombok.Getter;
 
 @Getter
