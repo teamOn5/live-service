@@ -1,6 +1,6 @@
 # live-service
 
-MSA 프로젝트(teamOn5)의 LIVE 서버. Java + Spring Boot, 헥사고날 아키텍처.
+MSA 프로젝트(teamOn5)의 LIVE 서버. Java + Spring Boot, 모듈별 레이어드 아키텍처.
 영상 송출·재생(RTMPS → Nginx-RTMP → HLS)은 Nginx-RTMP가 처리한다. **Spring Boot는 영상 스트림을 직접 처리하지 않는다.**
 이 서비스는 LIVE 비즈니스 로직과 WebSocket(STOMP) 기반 실시간 통신만 담당한다.
 
@@ -49,28 +49,44 @@ MSA 프로젝트(teamOn5)의 LIVE 서버. Java + Spring Boot, 헥사고날 아�
 
 기본 패키지: `com.teamon5.livepick`. `LiveServiceApplication`이 이 위치에 있어서 하위 패키지는 모두 컴포넌트 스캔된다.
 
+기능을 모듈(최상위 패키지)로 나누고, 각 모듈 안을 레이어드 구조로 나눈다. 모듈 이름은 기능 이름을 소문자로 붙여 쓴다(예: `livestream`). 도메인 분리는 하나의 Spring Boot 서비스 안에서 패키지 단위로만 한다. 도메인마다 Gradle 모듈이나 마이크로서비스를 만들지 않는다.
+
 ```text
-live
-├── adapter
-│   ├── in
-│   │   ├── web          # REST Controller (사용자/판매자/관리자/내부)
-│   │   └── websocket    # WebSocketConfig, STOMP 메시지 핸들러
-│   └── out
-│       ├── persistence  # DB 구현체 (JPA, Mongo, Redis)
-│       ├── messaging    # Kafka Producer/Consumer
-│       └── client       # FeignClient (서비스 간 호출)
-├── application
-│   ├── port
-│   │   ├── in           # 유스케이스 인터페이스
-│   │   └── out          # 외부 시스템에 요구하는 기능의 인터페이스
-│   └── service          # 유스케이스 구현, 비즈니스 흐름 처리
-└── domain               # 핵심 도메인 모델, 비즈니스 규칙, LiveErrorCode
+com.teamon5.livepick
+├── live                  # 방송 루트: 생명주기, 일정, 해시태그·호스트·공지
+├── livestream            # 송출: 송출 키, 송출 URL, 채팅 채널, 송출 세션 상태
+├── media                 # 미디어: 썸네일, 호스트 사진, 이미지·동영상 파일, 스토리지 연동
+├── liveproduct           # 방송 상품
+├── livecoupon            # 방송 쿠폰
+├── livereservation       # 시청자의 방송 예약 및 취소 (일정 등록은 live 책임)
+├── liveview              # 시청 기록, 시청 시간, 재접속
+├── livestatistics        # 통계 집계 및 조회 (LiveStats: 종료 시 확정 스냅샷, LiveStatistics: 집계 수치 VO)
+└── livereplay            # 다시 보기(VOD): 생성, 영상 처리 상태, 공개 여부 (파일 저장은 media 책임)
 ```
 
-- 의존성은 안쪽으로만 향한다: `adapter → application → domain`.
-- `domain`은 프레임워크와 adapter 어느 쪽에도 의존하지 않는다.
-- `application`은 port(인터페이스)에만 의존하고 adapter 구현체에는 의존하지 않는다.
-- 각 패키지의 빈 `.gitkeep`은 자리 표시용이다. 해당 패키지에 실제 코드를 추가하면 삭제한다.
+각 도메인은 같은 구조를 따른다.
+
+```text
+{도메인}
+├── presentation
+│   ├── controller
+│   └── dto
+├── application
+├── domain
+│   ├── model             # 엔티티와 VO (같은 패키지여야 package-private 제한이 된다)
+│   ├── enums             # enum
+│   └── exception         # 에러 코드
+└── infrastructure
+```
+
+- 레이어의 의존성은 위에서 아래로 향한다: `presentation → application → domain`. `application`은 `infrastructure`를 직접 호출할 수 있다. 교체 가능성이나 테스트 격리가 필요한 외부 의존에 한해서만 `application`에 인터페이스를 두고 `infrastructure`가 구현한다.
+- `domain`은 프레임워크와 `infrastructure` 어느 쪽에도 의존하지 않는다.
+- 모듈 간 참조는 ID로만 한다. 다른 도메인의 Domain Model을 가져와 수정하지 않고, 다른 도메인 객체를 필드로 보유하지 않는다. 식별자 타입은 기존 DB 설계와 API 명세를 확인해서 정한다. 다른 도메인의 데이터는 `infrastructure`의 클라이언트 호출로 가져온다.
+- 포트(인터페이스)는 바깥 기술과 맞닿는 경계에만 둔다. 예: 외부 서비스 클라이언트, 저장소, 파일 저장소. 모든 서비스마다 포트를 만들지 않는다.
+- `application/port/in`, `application/port/out`을 관습적으로 만들지 않는다. 헥사고날 아키텍처로 전환하지 않는다.
+- `presentation`에는 `controller`와 `dto` 패키지만 둔다. `request`, `response` 같은 하위 계층은 만들지 않는다.
+- 새 도메인은 다음 중 하나 이상에 해당할 때만 추가한다: 방송 생명주기와 독립된 쓰기·조회 흐름이 있다, 전용 저장소나 외부 연동이 있다, 변경 주기가 다른 기능과 분리된다. 단순한 필드 추가는 기존 도메인에 둔다.
+- 9개 도메인은 기본 구조를 모두 갖추며, 빈 패키지는 `.gitkeep`으로 유지한다. 해당 패키지에 실제 코드를 추가하면 `.gitkeep`을 삭제한다.
 
 ## 핵심 규칙 요약
 
@@ -81,7 +97,7 @@ live
 
 ## 코드 규칙
 
-- 요청하지 않은 기능을 추가하지 않고, 불필요한 추상화나 인터페이스를 만들지 않는다. 헥사고날 port는 예외다.
+- 요청하지 않은 기능을 추가하지 않고, 불필요한 추상화나 인터페이스를 만들지 않는다.
 - 기존 코드를 바꾸기 전에 호출 흐름과 의존성을 확인한다. 변경 범위는 요청한 작업에 한정한다.
 - 테스트를 작성하고(JUnit 5 + AssertJ, 메서드명은 한글 + 언더스코어), 기존 테스트가 깨지지 않게 한다.
 - 주석은 최소한으로, **왜**가 필요한 곳에만 쓴다. 빌드·설정 파일에는 설명 주석을 넣지 않는다.
@@ -94,6 +110,10 @@ live
 - 길이, null, 범위 같은 단순 검증만 필요한 값은 VO로 만들지 않는다. 엔티티 생성자나 정적 팩토리에서 검사하고 `BusinessException`을 던진다.
 - 요청 DTO의 크기 제한은 DTO Validation 어노테이션(`@Size`, `@NotBlank` 등)으로 처리한다. 도메인 검사는 DTO 검증을 대신하지 않으므로 생략하지 않는다.
 - 엔티티는 `@Builder` 없이 정적 팩토리(`create`)로 생성한다. DTO에는 빌더를 허용한다.
+- ID는 외부에 노출되는 것과 내부에서만 쓰는 것을 나눈다.
+  - 외부에 노출되는 식별자(API 응답, 이벤트, 다른 서비스와의 주고받음)는 UUID로 두고, 내부 DB 기본 키(`Long id`)는 밖으로 드러내지 않는다.
+  - 같은 서비스 안에서 엔티티를 참조할 때는 참조 대상이 외부에 노출되는지로 고른다. 외부에 노출되는 엔티티(예: `Live`)는 그 UUID로 참조하고, 외부에 노출되지 않는 내부 엔티티끼리는 `Long` ID로 참조한다. 객체를 직접 참조하지 않는다.
+  - API 계층이 UUID를 받아 내부 ID로 바꿔서 도메인을 호출하고, 응답은 다시 UUID로 만든다.
 - 객체가 커지면 빌더로 해결하지 말고 객체를 나눠서 해결한다.
 
 ## 커밋 규칙 요약
