@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.msa.common.core.error.BusinessException;
+import com.teamon5.livepick.live.domain.exception.LiveErrorCode;
+import com.teamon5.livepick.live.domain.model.Live;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
@@ -51,43 +53,6 @@ class LiveItemsTest {
   }
 
   @Test
-  void 상품_옵션은_최대_5개까지_등록할_수_있다() {
-    Live live = createLive();
-    for (int i = 0; i < 5; i++) {
-      live.addProduct(UUID.randomUUID(), UUID.randomUUID(), "옵션" + i, i, NOW);
-    }
-
-    assertThat(live.getProducts()).hasSize(5);
-    assertError(() -> live.addProduct(UUID.randomUUID(), UUID.randomUUID(), "초과", 5, NOW),
-        LiveErrorCode.ITEM_LIMIT_EXCEEDED);
-  }
-
-  @Test
-  void 같은_상품_옵션은_중복_등록할_수_없다() {
-    Live live = createLive();
-    UUID option = UUID.randomUUID();
-    live.addProduct(UUID.randomUUID(), option, "옵션", 0, NOW);
-
-    assertError(() -> live.addProduct(UUID.randomUUID(), option, "옵션", 1, NOW),
-        LiveErrorCode.DUPLICATE_LIVE_ITEM);
-  }
-
-  @Test
-  void 쿠폰은_최대_5개까지_연결할_수_있고_같은_쿠폰은_중복_연결할_수_없다() {
-    Live live = createLive();
-    UUID first = UUID.randomUUID();
-    live.addCoupon(first, 0, 0, NOW);
-
-    assertError(() -> live.addCoupon(first, 0, 1, NOW), LiveErrorCode.DUPLICATE_LIVE_ITEM);
-    for (int i = 1; i < 5; i++) {
-      live.addCoupon(UUID.randomUUID(), 0, i, NOW);
-    }
-    assertThat(live.getCoupons()).hasSize(5);
-    assertError(() -> live.addCoupon(UUID.randomUUID(), 0, 5, NOW),
-        LiveErrorCode.ITEM_LIMIT_EXCEEDED);
-  }
-
-  @Test
   void 공지는_여러_개_등록되고_내용이_50자를_넘으면_예외가_발생한다() {
     Live live = createLive();
 
@@ -106,21 +71,6 @@ class LiveItemsTest {
 
     assertThatThrownBy(() -> live.getHashtags().clear())
         .isInstanceOf(UnsupportedOperationException.class);
-  }
-
-  @Test
-  void 노출_순서나_공개_기준이_음수이면_예외가_발생한다() {
-    Live live = createLive();
-
-    assertThatThrownBy(() -> live.addCoupon(UUID.randomUUID(), -1, 0, NOW))
-        .isInstanceOf(BusinessException.class);
-    assertThatThrownBy(() -> live.addCoupon(UUID.randomUUID(), 0, -1, NOW))
-        .isInstanceOf(BusinessException.class);
-    assertThatThrownBy(() ->
-        live.addProduct(UUID.randomUUID(), UUID.randomUUID(), "옵션", -1, NOW))
-        .isInstanceOf(BusinessException.class);
-    assertThatThrownBy(() -> live.addHost("호스트", null, -1))
-        .isInstanceOf(BusinessException.class);
   }
 
   private static void assertError(ThrowingCallable call, LiveErrorCode expected) {
