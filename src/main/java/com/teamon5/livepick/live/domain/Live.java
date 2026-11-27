@@ -14,6 +14,8 @@ import lombok.Getter;
 @Getter
 public class Live {
 
+  private static final int MAX_TITLE_LENGTH = 20;
+  private static final int MAX_DESCRIPTION_LENGTH = 100;
   private static final int MAX_PRODUCTS = 5;
   private static final int MAX_COUPONS = 5;
   private static final int MAX_HASHTAGS = 5;
@@ -23,10 +25,8 @@ public class Live {
   private final UUID liveUuid;
   private final UUID shopId;
   private final UUID createdBy;
-  @Getter(AccessLevel.NONE)
-  private final LiveTitle title;
-  @Getter(AccessLevel.NONE)
-  private final LiveDescription description;
+  private final String title;
+  private final String description;
   private Long thumbnailMediaId;
   private Long categoryId;
   @Getter(AccessLevel.NONE)
@@ -54,7 +54,13 @@ public class Live {
   private final List<LiveNotice> notices = new ArrayList<>();
 
   private Live(UUID liveUuid, UUID shopId, UUID createdBy, Long categoryId, Long thumbnailMediaId,
-      LiveTitle title, LiveDescription description, LiveSchedule schedule, LocalDateTime now) {
+      String title, String description, LiveSchedule schedule, LocalDateTime now) {
+    if (title == null || title.isBlank() || title.length() > MAX_TITLE_LENGTH) {
+      throw new BusinessException(LiveErrorCode.INVALID_LIVE_TITLE);
+    }
+    if (description != null && description.length() > MAX_DESCRIPTION_LENGTH) {
+      throw new BusinessException(LiveErrorCode.INVALID_LIVE_DESCRIPTION);
+    }
     this.liveUuid = liveUuid;
     this.shopId = Objects.requireNonNull(shopId);
     this.createdBy = Objects.requireNonNull(createdBy);
@@ -62,7 +68,7 @@ public class Live {
     this.thumbnailMediaId = thumbnailMediaId;
     this.title = title;
     this.description = description;
-    this.schedule = schedule;
+    this.schedule = Objects.requireNonNull(schedule);
     this.status = LiveStatus.CREATED;
     this.chatEnabled = true;
     this.createdAt = Objects.requireNonNull(now);
@@ -73,16 +79,7 @@ public class Live {
       String title, String description, LocalDateTime scheduledStartAt,
       LocalDateTime scheduledEndAt, LocalDateTime now) {
     return new Live(UUID.randomUUID(), shopId, createdBy, categoryId, thumbnailMediaId,
-        new LiveTitle(title), description == null ? null : new LiveDescription(description),
-        new LiveSchedule(scheduledStartAt, scheduledEndAt), now);
-  }
-
-  public String getTitle() {
-    return title.value();
-  }
-
-  public String getDescription() {
-    return description == null ? null : description.value();
+        title, description, new LiveSchedule(scheduledStartAt, scheduledEndAt), now);
   }
 
   public LocalDateTime getScheduledStartAt() {
@@ -128,8 +125,7 @@ public class Live {
     if (products.stream().anyMatch(p -> p.getProductOptionId().equals(productOptionId))) {
       throw new BusinessException(LiveErrorCode.DUPLICATE_LIVE_ITEM);
     }
-    products.add(new LiveProduct(productId, productOptionId, new OptionName(optionName),
-        displayOrder, now));
+    products.add(new LiveProduct(productId, productOptionId, optionName, displayOrder, now));
   }
 
   public void addCoupon(UUID couponId, int unlockViewerCount, int displayOrder,
@@ -144,26 +140,25 @@ public class Live {
   }
 
   public void addHashtag(String tag) {
-    Hashtag hashtag = new Hashtag(tag);
+    LiveHashtag hashtag = new LiveHashtag(tag);
     if (hashtags.size() >= MAX_HASHTAGS) {
       throw new BusinessException(LiveErrorCode.ITEM_LIMIT_EXCEEDED);
     }
-    if (hashtags.stream().anyMatch(h -> h.getTag().equals(hashtag.value()))) {
+    if (hashtags.stream().anyMatch(h -> h.getTag().equals(tag))) {
       throw new BusinessException(LiveErrorCode.DUPLICATE_LIVE_ITEM);
     }
-    hashtags.add(new LiveHashtag(hashtag));
+    hashtags.add(hashtag);
   }
 
   public void addHost(String name, Long imageMediaId, int displayOrder) {
-    HostName hostName = new HostName(name);
     if (hosts.size() >= MAX_HOSTS) {
       throw new BusinessException(LiveErrorCode.ITEM_LIMIT_EXCEEDED);
     }
-    hosts.add(new LiveHost(hostName, imageMediaId, displayOrder));
+    hosts.add(new LiveHost(name, imageMediaId, displayOrder));
   }
 
   public void addNotice(String content, UUID author, LocalDateTime now) {
-    notices.add(new LiveNotice(new NoticeContent(content), author, now));
+    notices.add(new LiveNotice(content, author, now));
   }
 
   public List<LiveProduct> getProducts() {

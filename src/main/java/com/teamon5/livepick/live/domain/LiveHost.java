@@ -2,28 +2,27 @@ package com.teamon5.livepick.live.domain;
 
 import com.msa.common.core.error.BusinessException;
 import com.msa.common.core.error.CommonErrorCode;
-import lombok.AccessLevel;
 import lombok.Getter;
 
 @Getter
 public class LiveHost {
 
+  private static final int MAX_NAME_LENGTH = 10;
+
   private Long id;
-  @Getter(AccessLevel.NONE)
-  private final HostName name;
+  private final String name;
   private final Long imageMediaId;
   private final int displayOrder;
 
-  LiveHost(HostName name, Long imageMediaId, int displayOrder) {
+  LiveHost(String name, Long imageMediaId, int displayOrder) {
+    if (name == null || name.isBlank() || name.length() > MAX_NAME_LENGTH) {
+      throw new BusinessException(LiveErrorCode.INVALID_HOST_NAME);
+    }
     if (displayOrder < 0) {
       throw new BusinessException(CommonErrorCode.INVALID_INPUT);
     }
     this.name = name;
     this.imageMediaId = imageMediaId;
     this.displayOrder = displayOrder;
-  }
-
-  public String getName() {
-    return name.value();
   }
 }

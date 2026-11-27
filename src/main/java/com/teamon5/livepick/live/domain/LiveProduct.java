@@ -5,22 +5,26 @@ import com.msa.common.core.error.CommonErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
-import lombok.AccessLevel;
 import lombok.Getter;
 
 @Getter
 public class LiveProduct {
 
+  private static final int MAX_OPTION_NAME_LENGTH = 255;
+
   private Long id;
   private final UUID productId;
   private final UUID productOptionId;
-  @Getter(AccessLevel.NONE)
-  private final OptionName optionName;
+  private final String optionName;
   private final int displayOrder;
   private final LocalDateTime createdAt;
 
-  LiveProduct(UUID productId, UUID productOptionId, OptionName optionName, int displayOrder,
+  LiveProduct(UUID productId, UUID productOptionId, String optionName, int displayOrder,
       LocalDateTime createdAt) {
+    if (optionName == null || optionName.isBlank()
+        || optionName.length() > MAX_OPTION_NAME_LENGTH) {
+      throw new BusinessException(LiveErrorCode.INVALID_OPTION_NAME);
+    }
     if (displayOrder < 0) {
       throw new BusinessException(CommonErrorCode.INVALID_INPUT);
     }
@@ -29,9 +33,5 @@ public class LiveProduct {
     this.optionName = optionName;
     this.displayOrder = displayOrder;
     this.createdAt = Objects.requireNonNull(createdAt);
-  }
-
-  public String getOptionName() {
-    return optionName.value();
   }
 }
